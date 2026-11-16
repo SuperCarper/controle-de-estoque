@@ -8,11 +8,12 @@ int main() {
 
         FILE *ponteirinho;
         ponteirinho = fopen("inventory.txt", "a");
-        
+
         if (ponteirinho == NULL) {
             printf("Erro ao abrir o arquivo.");
             return 1;
         }
+
         fclose(ponteirinho);
 
         char nomes[100][50];
@@ -26,11 +27,13 @@ int main() {
 
         while (total < 100 && fgets(linha, 1000, ponteirinho) != NULL) {
 
-            if (sscanf(linha, "Nome: %49[^\n]", nomes[total]) == 1) {
+            linha[strcspn(linha, "\n")] = '\0';
+
+            if (sscanf(linha, "%49[^\n]", nomes[total]) == 1) {
 
                 if (fgets(linha, 1000, ponteirinho) != NULL) {
 
-                    if (sscanf(linha, "Quantidade: %d", &quantidades[total]) == 1) {
+                    if (sscanf(linha, "%d", &quantidades[total]) == 1) {
                         total++;
                     }
                 }
@@ -42,7 +45,20 @@ int main() {
         printf("================================\nControle de Estoque\n================================\nSelecione uma opção:\n1. Adicionar Item\n2. Remover Item\n3. Listar Estoque\n4. Sair\nOpção: ");
 
         int option, quantidade;
-        scanf("%d", &option);
+
+        if (scanf("%d", &option) != 1) {
+            printf("Opção inválida. Digite um número de 1 a 4.\n");
+
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+
+            continue;
+        }
+
+        if (option < 1 || option > 4) {
+            printf("Opção inválida. Tente novamente.\n");
+            continue;
+        }
 
         char digito[50];
 
@@ -52,50 +68,57 @@ int main() {
             scanf(" %49[^\n]", digito);
 
             printf("\nDigite a quantidade: ");
-            scanf("%d", &quantidade);
+
+            if (scanf("%d", &quantidade) != 1) {
+                printf("Quantidade inválida.\n");
+
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+
+                continue;
+            }
 
             if (quantidade <= 0) {
                 printf("Quantidade inválida.\n");
+                continue;
             }
-            else {
-                int encontrado = 0;
 
-                for (i = 0; i < total; i++) {
-                    if (strcmp(nomes[i], digito) == 0) {
-                        quantidades[i] += quantidade;
-                        encontrado = 1;
-                        break;
-                    }
-                }
+            int encontrado = 0;
 
-                if (encontrado == 0 && total < 100) {
-                    strcpy(nomes[total], digito);
-                    quantidades[total] = quantidade;
-                    total++;
-                }
-
-                else if (encontrado == 0) {
-                    printf("Limite de itens atingido.\n");
-                }
-
-                if (encontrado == 1 || total <= 100) {
-                    ponteirinho = fopen("inventory.txt", "w");
-
-                    for (i = 0; i < total; i++) {
-                        fprintf(ponteirinho, "Nome: %s\n", nomes[i]);
-                        fprintf(ponteirinho, "Quantidade: %d\n\n", quantidades[i]);
-                    }
-
-                    fclose(ponteirinho);
-
-                    if (encontrado == 1) {
-                        printf("Quantidade atualizada com sucesso!\n");
-                    }
-                    else {
-                        printf("Item adicionado com sucesso!\n");
-                    }
+            for (i = 0; i < total; i++) {
+                if (strcmp(nomes[i], digito) == 0) {
+                    quantidades[i] += quantidade;
+                    encontrado = 1;
+                    break;
                 }
             }
+
+            if (encontrado == 0 && total < 100) {
+                strcpy(nomes[total], digito);
+                quantidades[total] = quantidade;
+                total++;
+            }
+            else if (encontrado == 0) {
+                printf("Limite de itens atingido.\n");
+                continue;
+            }
+
+            // Salvar no formato: nome e quantidade
+            ponteirinho = fopen("inventory.txt", "w");
+
+            if (ponteirinho == NULL) {
+                printf("Erro ao salvar o arquivo.\n");
+                return 1;
+            }
+
+            for (i = 0; i < total; i++) {
+                fprintf(ponteirinho, "%s\n", nomes[i]);
+                fprintf(ponteirinho, "%d\n", quantidades[i]);
+            }
+
+            fclose(ponteirinho);
+
+            printf("Item adicionado com sucesso!\n");
         }
 
         else if (option == 2) {
@@ -104,7 +127,15 @@ int main() {
             scanf(" %49[^\n]", digito);
 
             printf("\nDigite a quantidade a ser removida: ");
-            scanf("%d", &quantidade);
+
+            if (scanf("%d", &quantidade) != 1) {
+                printf("Quantidade inválida.\n");
+
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+
+                continue;
+            }
 
             int encontrado = 0;
 
@@ -144,9 +175,14 @@ int main() {
                         // Atualizar o arquivo
                         ponteirinho = fopen("inventory.txt", "w");
 
+                        if (ponteirinho == NULL) {
+                            printf("Erro ao salvar o arquivo.\n");
+                            return 1;
+                        }
+
                         for (int j = 0; j < total; j++) {
-                            fprintf(ponteirinho, "Nome: %s\n", nomes[j]);
-                            fprintf(ponteirinho, "Quantidade: %d\n\n", quantidades[j]);
+                            fprintf(ponteirinho, "%s\n", nomes[j]);
+                            fprintf(ponteirinho, "%d\n", quantidades[j]);
                         }
 
                         fclose(ponteirinho);
@@ -171,8 +207,8 @@ int main() {
                 printf("=============================\nEstoque Atual\n=============================\n");
 
                 for (i = 0; i < total; i++) {
-                    printf("Nome: %s\n", nomes[i]);
-                    printf("Quantidade: %d\n\n", quantidades[i]);
+                    printf("%s\n", nomes[i]);
+                    printf("%d\n\n", quantidades[i]);
                 }
             }
         }
@@ -181,10 +217,6 @@ int main() {
             printf("Obrigado por usar o Controle de Estoques! Até a próxima.");
             lista = 1;
             continue;
-        }
-
-        else {
-            printf("Opção inválida.\n");
         }
 
         printf("\nDeseja realizar outra operação? (s/n): ");
